@@ -1,0 +1,75 @@
+ls
+ls
+pwd
+history 3
+! 3
+pwd
+! 2
+ls
+
+ls
+history 10
+! 10
+ls
+history 10
+! 6
+pwd
+
+ls
+history 10
+history 10
+pwd
+pwd
+ls
+ls
+echo 20
+echo 20
+
+ls
+echo 2
+echo 2
+echo 2
+pwd
+pwd
+echo 100
+!
+!
+echo 100
+echo 100
+history 10
+! 37
+echo 100
+
+ls | grep s
+ls | grep s
+history 2
+! 44
+ls | grep s
+
+ls
+sleep 10
+ls
+exit
+
+history 10
+! 52
+exit
+
+history 10 | grep l
+
+exit | ls
+
+history 20 | grep l
+exit | ls
+history 20
+history 20
+exit | ls
+exit | ls
+history 20
+! 62
+history 20 | grep l
+history 20 | grep l
+history 20
+ls
+ls
+history 20 | grep l
