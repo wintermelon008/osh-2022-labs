@@ -4,7 +4,7 @@
 
 #define VECTOR_EMPTY -2
 
-#define DEFAULT_CMD_LOG_FILENAME "command_log.txt"
+#define DEFAULT_CMD_LOG_FILENAME "/home/melon/Desktop/lab2/command_log.txt"
 #define MAX_CMD_NUM 1000
 
 // 历史命令保存

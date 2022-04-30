@@ -36,6 +36,11 @@ int main() {
 
   while (true) {
 
+    if (false) {
+      whilestart:
+      ;
+    }
+
     CtrlC_flag = 0;
     char ch;
     std::cout << "[Shell] # ";		// TODO: add workpath info
@@ -62,6 +67,8 @@ int main() {
       nextcmd:
       cmd_input = nextcommand;
     }
+
+    
     if (cmd_input.size())
       hiscmd.Add_command(cmd_input);
 
@@ -158,14 +165,30 @@ int main() {
           hiscmd.PrintcmdId(id);
           goto nextcmd;
         }
-        //std::cout << "A son thread has been ended: No." << wpid << "\n";
-      }
+        else if (wpid == last_pid && WEXITSTATUS(state) == CHANGE_WORKPATH) {
+          //std::cout << "Debug: the "
+          if (cmd[thread_i - 1].parameter.size() == 0) {
+          // 输出的信息尽量为英文，非英文输出（其实是非 ASCII 输出）在没有特别配置的情况下（特别是 Windows 下）会乱码
+          // 如感兴趣可以自行搜索 GBK Unicode UTF-8 Codepage UTF-16 等进行学习
+            std::cout << "cd failed: Insufficient arguments\n";
+          // 不要用 std::encddl，std::endl = "\n" + fflush(stdout)
+            break;
+          }
+          // 调用系统 API
+          int ret = chdir(cmd[thread_i - 1].parameter[0].c_str());
+          if (ret < 0) {
+            std::cout << "cd failed: Illegal path\n";
+          }
+          break;
+          //std::cout << "A son thread has been ended: No." << wpid << "\n";
+        }
       //wpid = waitpid(-1, NULL, WNOHANG);
-    }
+      }
     
+    }
+
   }
 }
-
 // 根据进程编号选择连接 or 关闭管道
 int Pipe_apply(int thread_i, int thread_num, int fd[][2]) {
   // 关闭
@@ -213,35 +236,34 @@ int Pipe_apply(int thread_i, int thread_num, int fd[][2]) {
 
 // 执行指令
 int do_command(struct command cmd) {
-  std::string rd_filename;
-  FILE *fp;
+  std::string input_filename = "";
+  std::string output_filename = "";
+  std::string output_add_filename = "";
+  FILE *fp1, *fp2, *fp3;
   int rd_place = cmd.parameter.size();
-  int rd_ret = Check_Redirect(cmd.parameter, rd_filename, rd_place);
+  int rd_ret = Check_Redirect(cmd.parameter, input_filename, output_filename, output_add_filename, rd_place);
   //std::cout << "Debug: the rd_place is: " << rd_place << "\n";
-  if (rd_ret == REDIRECT_CHECK_ERROR)
-    exit(REDIRECT_CHECK_ERROR);
-  else if (rd_ret == OUT_REDIRECT) {
-    // 输出重定向
-     fp = freopen(rd_filename.c_str(), "w", stdout);
-    if (!fp) {
-      std::cout << "Redirect ERROR!\n";
-      exit(REDIRECT_ERROR);
+  if (rd_ret != NO_REDIRECT) {
+    if (input_filename.length()) {
+      fp1 = freopen(input_filename.c_str(), "r", stdin);
+      if (!fp1) {
+        std::cout << "Redirect ERROR!\n";
+        exit(REDIRECT_ERROR);
+      }
     }
-  }
-  else if (rd_ret == IN_REDIRECT) {
-    // 输入重定向
-     fp = freopen(rd_filename.c_str(), "r", stdin);
-    if (!fp) {
-      std::cout << "Redirect ERROR!\n";
-      exit(REDIRECT_ERROR);
+    if (output_filename.length()) {
+      fp2 = freopen(output_filename.c_str(), "w", stdout);
+      if (!fp2) {
+        std::cout << "Redirect ERROR!\n";
+        exit(REDIRECT_ERROR);
+      }
     }
-  }
-  else if (rd_ret == OUT_ADD_REDIRECT) {
-    // 输出追加重定向
-     fp = freopen(rd_filename.c_str(), "a", stdout);
-    if (!fp) {
-      std::cout << "Redirect ERROR!\n";
-      exit(REDIRECT_ERROR);
+    if (output_add_filename.length()) {
+      fp3 = freopen(output_add_filename.c_str(), "a", stdout);
+      if (!fp3) {
+        std::cout << "Redirect ERROR!\n";
+        exit(REDIRECT_ERROR);
+      }
     }
   }
   
@@ -262,8 +284,11 @@ int do_command(struct command cmd) {
   if (cmd.command == "hello"){
     // A test output
     std::cout << "Hello! My first Shell!\n";
-    if (rd_ret != NO_REDIRECT)
-      fclose(fp);
+    // if (rd_ret != NO_REDIRECT) {
+    //   fclose(fp1);
+    //   fclose(fp2);
+    //   fclose(fp3);
+    // }
     exit(COMMAND_DONE);
   }
 
@@ -277,13 +302,9 @@ int do_command(struct command cmd) {
     // 转换失败
     if (!code_stream.eof() || code_stream.fail()) {
       std::cout << "Invalid history code\n";
-      if (rd_ret != NO_REDIRECT)
-      fclose(fp);
       exit(NUMBER_TRANS_ERROR);
     }
     hiscmd.Printcmd(code);
-    if (rd_ret != NO_REDIRECT)
-      fclose(fp);
     exit(COMMAND_DONE);
   }
 
@@ -296,44 +317,18 @@ int do_command(struct command cmd) {
     // 转换失败
     if (!code_stream.eof() || code_stream.fail()) {
       std::cout << "Invalid history code\n";
-      if (rd_ret != NO_REDIRECT)
-      fclose(fp);
       exit(NUMBER_TRANS_ERROR);
     }
-    if (rd_ret != NO_REDIRECT)
-      fclose(fp);
     exit(HISTORY_COMMAND_BASE + code - 1);
   }
 
   if (cmd.command == "!!") {
-    if (rd_ret != NO_REDIRECT)
-      fclose(fp);
     exit(LAST_ONE_COMMAND);
   }
 
   // 更改工作目录为目标目录 ==========================================================================
   if (cmd.command == "cd") {
-    if (cmd.parameter.size() != 1) {
-      // 输出的信息尽量为英文，非英文输出（其实是非 ASCII 输出）在没有特别配置的情况下（特别是 Windows 下）会乱码
-      // 如感兴趣可以自行搜索 GBK Unicode UTF-8 Codepage UTF-16 等进行学习
-      std::cout << "cd failed: Insufficient arguments\n";
-      // 不要用 std::encddl，std::endl = "\n" + fflush(stdout)
-      if (rd_ret != NO_REDIRECT)
-      fclose(fp);
-      exit(COMMAND_DONE);
-    }
-    // 调用系统 API
-    int ret = chdir(cmd.parameter[0].c_str());
-    if (ret < 0) {
-      std::cout << "cd failed: Illegal path\n";
-    }
-    else {
-      workpath = cmd.parameter[0].c_str();
-      //std::cout << "Set working path to " << workpath << "\n";
-    }
-    if (rd_ret != NO_REDIRECT)
-      fclose(fp);
-    exit(COMMAND_DONE);
+    exit(CHANGE_WORKPATH);
   }
 
   // 显示当前工作目录 ==========================================================================
@@ -349,8 +344,6 @@ int do_command(struct command cmd) {
     } else {
       std::cout << ret << "\n";
     }
-    if (rd_ret != NO_REDIRECT)
-      fclose(fp);
     exit(COMMAND_DONE);
   }
 
@@ -375,16 +368,12 @@ int do_command(struct command cmd) {
         std::cout << "export failed\n";
       }
     }
-    if (rd_ret != NO_REDIRECT)
-      fclose(fp);
     exit(COMMAND_DONE);
   }
 
   // 退出 ==========================================================================
   if (cmd.command == "exit") {
     if (cmd.parameter.size() <= 0) {
-      if (rd_ret != NO_REDIRECT)
-      fclose(fp);
       exit(EXIT);
     }
     // std::string 转 int
@@ -395,12 +384,8 @@ int do_command(struct command cmd) {
     // 转换失败
     if (!code_stream.eof() || code_stream.fail()) {
       std::cout << "Invalid exit code\n";
-      if (rd_ret != NO_REDIRECT)
-      fclose(fp);
       exit(EXIT);
     }
-    if (rd_ret != NO_REDIRECT)
-      fclose(fp);
     exit(EXIT); // TODO 增加提示code
   }
 
@@ -429,8 +414,6 @@ int do_command(struct command cmd) {
 
   // 这里只有父进程（原进程）才会进入
   wait(nullptr);
-  if (rd_ret != NO_REDIRECT)
-      fclose(fp);
   exit(COMMAND_DONE);
 }
 
@@ -461,7 +444,8 @@ static void CtrlC_handler(int sig) {
 
 // 检查重定向
 // 目前仅支持单个重定向符号解析
-int Check_Redirect(const std::vector<std::string> &parameter, std::string &filename, int &rd_place) {
+int Check_Redirect(const std::vector<std::string> &parameter, std::string &input_filename, 
+                         std::string &output_filename, std::string &output_add_filename ,int &rd_place){
   const std::string out_rd = ">";
   const std::string in_rd = "<";
   const std::string out_add_rd = ">>";
@@ -471,26 +455,17 @@ int Check_Redirect(const std::vector<std::string> &parameter, std::string &filen
     return NO_REDIRECT;
   for (i = 0; i < parameter.size() - 1; ++i) {
     if (parameter[i] == out_rd) {
-      filename = parameter[i + 1];
-      rd_place = i;
-      if (filename.length() > 0)
-        return OUT_REDIRECT;
+      output_filename = parameter[i + 1];
+      rd_place = i < rd_place ? i : rd_place;
     }
     else if (parameter[i] == in_rd) {
-      filename = parameter[i + 1];
-      rd_place = i;
-      if (filename.length() > 0)
-        return IN_REDIRECT;
+      input_filename = parameter[i + 1];
+      rd_place = i < rd_place ? i : rd_place;
     }
     else if (parameter[i] == out_add_rd) {
-      filename = parameter[i + 1];
-      rd_place = i;
-      if (filename.length() > 0)
-        return OUT_ADD_REDIRECT;
-    }    
+      output_add_filename = parameter[i + 1];
+      rd_place = i < rd_place ? i : rd_place;
+    }
   }
-  if (i == parameter.size() - 1) {
-    return NO_REDIRECT;
-  }
-  return REDIRECT_CHECK_ERROR;
+  return 0;
 }

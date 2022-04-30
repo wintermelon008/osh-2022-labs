@@ -1,112 +1,46 @@
+cd
+
 ls
+cd
+cd 123
+ls
+cd ..
+ls
+
+cd 123 | pwd | cd 123 | pwd
+ls
+pwd | cd 123
+ls
+cd ..
+cd 123 | ls | grep l
+
+ls
+ls
+cd 123
+cd ..
+
+ls
+mkdir strace
+cd strace
+ls
+touch strace.cpp
+
+ls
+
+ls
+ls > 2.txt
+grep m < 2.txt > 3.txt
+rm 1.txt 2.txt 3.txt
+git status
+git add .
+git commit -m "修改重定向"
+git push
+make
+
 ls
 pwd
-history 3
-! 3
-pwd
-! 2
+ls | grep s > 1.txt
+grep s < 1.txt | grep l
+rm 1.txt
+export
 ls
-
-ls
-history 10
-! 10
-ls
-history 10
-! 6
-pwd
-
-ls
-history 10
-history 10
-pwd
-pwd
-ls
-ls
-echo 20
-echo 20
-
-ls
-echo 2
-echo 2
-echo 2
-pwd
-pwd
-echo 100
-!
-!
-echo 100
-echo 100
-history 10
-! 37
-echo 100
-
-ls | grep s
-ls | grep s
-history 2
-! 44
-ls | grep s
-
-ls
-sleep 10
-ls
-exit
-
-history 10
-! 52
-exit
-
-history 10 | grep l
-
-exit | ls
-
-history 20 | grep l
-exit | ls
-history 20
-history 20
-exit | ls
-exit | ls
-history 20
-! 62
-history 20 | grep l
-history 20 | grep l
-history 20
-ls
-ls
-history 20 | grep l
-
-ls > test.txt
-
-ls 
-ls > 1.txt
-
-ls
-ls
-pwd
-ls 1
-ls >
-ls > 123.txt
-ls
-
-ls
-ls
-ls > 3.txt
-
-ls
-ls | grep a
-ls
-history 1
-
-ls
-ls > 111.txt
-ls
-
-ls
-ls >> 1.txt
-ls >> 1.txt
-ls >> 1.txt
-l > 1.txt
-l > 1.txt
-l > 1.txt
-ls > 1.txt
-grep < 1.txt
-grep l < 1.txt
