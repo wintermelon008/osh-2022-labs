@@ -97,13 +97,15 @@ echo 1
 
 
 
-**选做部分**
+#### **选做部分**
 
-**shell 可以查看历史命令**。本实验中设置了一个默认存储文件（见 `history.h`），该文件将实时存储用户已经输入的指令。由于文件名采用了绝对路径，**在第一次打开 shell 程序前需要将其修改为本地地址**。否则程序将无法正常运行。
+**shell 可以查看历史命令**。本实验中设置了一个默认存储文件（见 `history.h`），该文件将实时存储用户已经输入的指令。文件路径为：
 
-```c++
-#define DEFAULT_CMD_LOG_FILENAME "/home/melon/Desktop/lab2/command_log.txt"
 ```
+/home/username/command_log.txt
+```
+
+*关于如何获取当前系统的用户名......曲线救国就完事了（*
 
 
 

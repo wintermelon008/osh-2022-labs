@@ -46,6 +46,8 @@ int HistoryCmd::Save_commmand() {
 }
 
 int HistoryCmd::Load_command() {
+    FILE *fp = fopen(filename.c_str(), "a");
+    fclose(fp);
     std::ifstream infile;
     infile.open(filename.c_str(), std::ios::in);
     while (!infile.eof()) {

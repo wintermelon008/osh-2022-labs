@@ -3,8 +3,7 @@
 #include <vector>
 
 #define VECTOR_EMPTY -2
-
-#define DEFAULT_CMD_LOG_FILENAME "/home/melon/Desktop/lab2/command_log.txt"
+#define DEFAULT_CMD_LOG_FILENAME "/command_log.txt"
 #define MAX_CMD_NUM 1000
 
 // 历史命令保存
@@ -15,10 +14,10 @@ class HistoryCmd {
   public:
     HistoryCmd(std::string name = DEFAULT_CMD_LOG_FILENAME) {
       filename = name;
-      this->Load_command();
+      //this->Load_command();
     }
     ~HistoryCmd() {
-      this->Save_commmand();
+      //this->Save_commmand();
     };
     int Set_filename(std::string name);
     std::string Get_filename();

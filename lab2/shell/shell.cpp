@@ -1,6 +1,7 @@
 // IO
 #include <iostream>
 #include <stdio.h>
+#include <string.h>
 // std::string
 #include <string>
 // std::vector
@@ -29,10 +30,49 @@ std::string nextcommand;
 int main() {
   // 不同步 iostream 和 cstdio 的 buffer
   //std::ios::sync_with_stdio(false);
+  FILE *fp = fopen("name.txt", "w+");
+  fclose(fp);
+
+  pid_t pid = fork();
+  char *arg_ptrs[2];
+  const char *arg1 = "whoami";
+  const char *arg2 = ">";
+  const char *arg3 = "name.txt";
+  arg_ptrs[0] = (char *)arg1;
+  arg_ptrs[1] = nullptr;
+  
+
+  if (pid == 0) {
+    freopen("name.txt", "w", stdout);
+    execvp("whoami", arg_ptrs);
+    exit(0);
+  }
+  wait(nullptr);
+
+  fp = fopen("name.txt", "r+");
+  char username1[20];
+  fread(username1, sizeof(char), 20, fp);
+
+
+  fclose(fp);
+  username1[strlen(username1) - 1] = '\0';
+  std::string username = username1;
+  std::string filename;
+
+  // std::string username, filename;
+  // std::cout << "Please Enter your username:\n";
+  // std::getline(std::cin, username);
+
+  
+  filename = "/home/" + username + hiscmd.Get_filename();
+  hiscmd.Set_filename(filename);
+
   struct sigaction sig;
   sig.sa_handler = CtrlC_handler;
   sig.sa_flags = 0;
   sigaction(SIGINT, &sig, NULL);
+
+  hiscmd.Load_command();
 
   while (true) {
 
@@ -58,6 +98,7 @@ int main() {
     while ((ch = getchar()) != '\n' && !CtrlC_flag) {
       if (ch == EOF && !CtrlC_flag) {
         std::cout << "Goodbye!\n";
+        hiscmd.Save_commmand();
         exit(0);
       }
       cmd_input.push_back(ch);
@@ -149,6 +190,7 @@ int main() {
       }
       while ((wpid = waitpid(-1, &state, WNOHANG)) != -1) {
         if (wpid == last_pid && WEXITSTATUS(state) == EXIT) {
+          hiscmd.Save_commmand();
           std::cout << "Goodbye!\n";
           exit(0);
         }
