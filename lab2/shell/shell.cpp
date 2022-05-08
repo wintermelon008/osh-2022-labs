@@ -224,6 +224,40 @@ int main() {
           break;
           //std::cout << "A son thread has been ended: No." << wpid << "\n";
         }
+
+        else if (wpid == last_pid && WEXITSTATUS(state) == SET_ENV) {
+          for (auto i = cmd[thread_i - 1].parameter.begin(); i != cmd[thread_i - 1].parameter.end(); i++) {
+            std::string key = *i;
+
+            // std::string 默认为空
+            std::string value;
+
+            // std::string::npos = std::string end
+            // std::string 不是 nullptr 结尾的，但确实会有一个结尾字符 npos
+            size_t pos;
+            if ((pos = i->find('=')) != std::string::npos) {
+              key = i->substr(0, pos);
+              value = i->substr(pos + 1);
+            }
+
+            int ret = setenv(key.c_str(), value.c_str(), 1);
+            if (ret < 0) {
+              std::cout << "export failed\n";
+            }
+          }
+        }
+
+        else if (wpid == last_pid && WEXITSTATUS(state) == GET_ENV) {
+         
+          char *name = (char *)cmd[thread_i - 1].parameter[0].c_str();
+          name++;
+
+          char* x = getenv(name);
+          if (!x)
+            std::cout << "Not found.\n";
+          else
+            std::cout << x << "\n";
+        }
       //wpid = waitpid(-1, NULL, WNOHANG);
       }
     
@@ -391,26 +425,14 @@ int do_command(struct command cmd) {
 
   // 设置环境变量 ==========================================================================
   if (cmd.command == "export") {
-    for (auto i = cmd.parameter.begin(); i != cmd.parameter.end(); i++) {
-      std::string key = *i;
+    exit(SET_ENV);
+  }
 
-      // std::string 默认为空
-      std::string value;
-
-      // std::string::npos = std::string end
-      // std::string 不是 nullptr 结尾的，但确实会有一个结尾字符 npos
-      size_t pos;
-      if ((pos = i->find('=')) != std::string::npos) {
-        key = i->substr(0, pos);
-        value = i->substr(pos + 1);
-      }
-
-      int ret = setenv(key.c_str(), value.c_str(), 1);
-      if (ret < 0) {
-        std::cout << "export failed\n";
-      }
+  // 读取变量值 ======================================================================
+  if (cmd.command == "echo") {
+    if (cmd.parameter[0][0] == '$') {
+      exit(GET_ENV);
     }
-    exit(COMMAND_DONE);
   }
 
   // 退出 ==========================================================================

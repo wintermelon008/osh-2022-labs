@@ -44,6 +44,10 @@ shell.h
 [Shell] # 
 ```
 
+说明：shell 需要用户在 重定向符 与 目标文件 之间保留空格，否则无法识别。
+
+
+
 **shell 可以正确处理 Ctrl-C 信号**。例如
 
 ```shell
@@ -105,8 +109,6 @@ echo 1
 /home/username/command_log.txt
 ```
 
-*关于如何获取当前系统的用户名......曲线救国就完事了（*
-
 
 
 **shell 可以处理 Ctrl-D。**例如
@@ -118,6 +120,20 @@ echo 1
 2
 [Shell] # Goodbye!		// 按下 Ctrl-D
 melon@ubuntu:~/Desktop/lab2$ 
+```
+
+
+
+**shell 可以读取环境变量值**。例如
+
+```shell
+[Shell] # echo $USER
+melon
+[Shell] # echo $ABC
+Not found.
+[Shell] # export ABC=12345
+[Shell] # echo $ABC
+12345
 ```
 
 
