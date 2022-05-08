@@ -50,7 +50,7 @@ int main() {
   wait(nullptr);
 
   fp = fopen("name.txt", "r+");
-  char username1[20];
+  char username1[20] = {0};
   fread(username1, sizeof(char), 20, fp);
 
 
