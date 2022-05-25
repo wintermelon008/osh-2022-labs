@@ -6,6 +6,8 @@
 #include <netinet/in.h>
 #include <pthread.h>
 
+#define MAX_RECV_SIZE 1000
+
 struct Pipe {
     int fd_send;
     int fd_recv;
@@ -14,35 +16,80 @@ struct Pipe {
 
 void *handle_chat(void *data) {
     struct Pipe *pipe = (struct Pipe *)data;
-    char buffer[1024] = " ";
+    char buffer[1024] = " ", buffer1[1024] = " ";
  
-
     char id = pipe->id + '0';
     
-    long len;
+    long len, len1;
 
     char id_buf[20] = "Your id is: 0\n";
     id_buf[12] = id;
     send(pipe->fd_send, id_buf, 20, 0);
 
-    while ((len = recv(pipe->fd_send, buffer, 1000, 0)) > 0) {
-    
-        char *bufferbase = buffer;
-        char *nextline = NULL;
+    while (1) {
 
-        while ((nextline = strchr(bufferbase, '\n')) != NULL) {
+        len = recv(pipe->fd_send, buffer, MAX_RECV_SIZE, 0);
+        if (len <= 0) break;
+        Recv_start:
+
+        if (len == MAX_RECV_SIZE && buffer[MAX_RECV_SIZE - 1] != '\n') {   
+            len1 = recv(pipe->fd_send, buffer1, MAX_RECV_SIZE, 0);
+            // printf("%ld:%s\n%ld:%s\n", len, buffer, len1, buffer1);
+        }
+    
+        buffer[MAX_RECV_SIZE] = '\n';
+        buffer[MAX_RECV_SIZE + 1] = '\0'; 
+
+        char *bufferbase = buffer;
+        char *nextline;
+        
+        while((nextline = strchr(bufferbase, '\n')) != NULL) {
             long sendlen = nextline - bufferbase;
 
             char buf_head[1024] = "[0]: ";
             buf_head[1] = id;
             strncat(buf_head, bufferbase, 1000);
 
+            // if (sendlen > 1000) {
+            //     send(pipe->fd_recv, buf_head, 1006, 0);
+            //     bufferbase += 1000;
+            // }
+            // else {
             send(pipe->fd_recv, buf_head, sendlen + 6, 0);
             bufferbase = nextline + 1;
+            // }
+
 
             if (bufferbase >= buffer + len)
                 break;
+            
         }
+
+        if (len == MAX_RECV_SIZE && buffer[MAX_RECV_SIZE - 1] != '\n') {
+            len = len1;
+            strcpy(buffer, buffer1);
+            goto Recv_start;
+        }
+        
+        // char *nextline = strchr(bufferbase, '\n');
+        // if (nextline == NULL) {
+        //     char buf_head[1024] = "[0]: ";  // This length is 5
+        //     buf_head[1] = id;
+        //     strncat(buf_head, bufferbase, 1000);
+        //     send(pipe->fd_recv, buf_head, len + 5, 0);
+        // }        
+        // else {
+        //     do {
+        //         long sendlen = nextline - bufferbase;
+        //         char buf_head[1024] = "[0]: ";
+        //         buf_head[1] = id;
+        //         strncat(buf_head, bufferbase, 1000);
+        //         bufferbase = nextline + 1;
+
+        //         if (bufferbase >= buffer + len)
+        //             break;
+        //     } while((nextline = strchr(bufferbase, '\n')) != NULL);
+        // }
     
     }
     return NULL;
