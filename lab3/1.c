@@ -27,14 +27,12 @@ void *handle_chat(void *data) {
     send(pipe->fd_send, id_buf, 20, 0);
 
     while (1) {
-
         len = recv(pipe->fd_send, buffer, MAX_RECV_SIZE, 0);
         if (len <= 0) break;
         Recv_start:
 
         if (len == MAX_RECV_SIZE && buffer[MAX_RECV_SIZE - 1] != '\n') {   
             len1 = recv(pipe->fd_send, buffer1, MAX_RECV_SIZE, 0);
-            // printf("%ld:%s\n%ld:%s\n", len, buffer, len1, buffer1);
         }
     
         buffer[MAX_RECV_SIZE] = '\n';
@@ -45,24 +43,14 @@ void *handle_chat(void *data) {
         
         while((nextline = strchr(bufferbase, '\n')) != NULL) {
             long sendlen = nextline - bufferbase;
-
             char buf_head[1024] = "[0]: ";
             buf_head[1] = id;
             strncat(buf_head, bufferbase, 1000);
-
-            // if (sendlen > 1000) {
-            //     send(pipe->fd_recv, buf_head, 1006, 0);
-            //     bufferbase += 1000;
-            // }
-            // else {
             send(pipe->fd_recv, buf_head, sendlen + 6, 0);
             bufferbase = nextline + 1;
-            // }
-
 
             if (bufferbase >= buffer + len)
                 break;
-            
         }
 
         if (len == MAX_RECV_SIZE && buffer[MAX_RECV_SIZE - 1] != '\n') {
@@ -70,26 +58,6 @@ void *handle_chat(void *data) {
             strcpy(buffer, buffer1);
             goto Recv_start;
         }
-        
-        // char *nextline = strchr(bufferbase, '\n');
-        // if (nextline == NULL) {
-        //     char buf_head[1024] = "[0]: ";  // This length is 5
-        //     buf_head[1] = id;
-        //     strncat(buf_head, bufferbase, 1000);
-        //     send(pipe->fd_recv, buf_head, len + 5, 0);
-        // }        
-        // else {
-        //     do {
-        //         long sendlen = nextline - bufferbase;
-        //         char buf_head[1024] = "[0]: ";
-        //         buf_head[1] = id;
-        //         strncat(buf_head, bufferbase, 1000);
-        //         bufferbase = nextline + 1;
-
-        //         if (bufferbase >= buffer + len)
-        //             break;
-        //     } while((nextline = strchr(bufferbase, '\n')) != NULL);
-        // }
     
     }
     return NULL;
@@ -124,12 +92,12 @@ int main(int argc, char **argv) {
         return 1;
     }
     
-    printf("Test: 0\n");
+    //printf("Test: 0\n");
     int fd1 = accept(fd, NULL, NULL);
     // 等待nc的接入
-    printf("Test: 0.1\n");
+    //printf("Test: 0.1\n");
     int fd2 = accept(fd, NULL, NULL);
-    printf("Test: 0.2\n");
+    //printf("Test: 0.2\n");
     if (fd1 == -1 || fd2 == -1) {
         perror("accept");
         return 1;
@@ -147,13 +115,13 @@ int main(int argc, char **argv) {
    
     pthread_create(&thread1, NULL, handle_chat, (void *)&pipe1);
     pthread_create(&thread2, NULL, handle_chat, (void *)&pipe2);
-    printf("Test: 1\n");
+   // printf("Test: 1\n");
     pthread_join(thread1, NULL);
-    printf("Test: 2\n");
+   // printf("Test: 2\n");
     pthread_join(thread2, NULL);
-    printf("Test: 3\n");
+    //printf("Test: 3\n");
 
-    printf("The main function ends.\n");
+    //printf("The main function ends.\n");
     return 0;
 }
 
