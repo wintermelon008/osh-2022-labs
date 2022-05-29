@@ -9,9 +9,7 @@
 
 
 // User struct
-#define MAX_USERNAME_LEN 40
 typedef struct User {
-    char username[MAX_USERNAME_LEN];
     int id; // the same as cfd
 } User;
 
@@ -20,7 +18,7 @@ User users[MAX_USERNUM] = {};
 int user_num = 0;
 
 // Message Queue 
-#define MAX_MSGQUE_LEN 100
+#define MAX_MSGQUE_LEN 100000
 typedef struct Message {
     char message[1024];
     int length;
@@ -103,15 +101,13 @@ void send_to_all(User user, char* message, long length) {
     pthread_mutex_unlock(&mutex);
 }
 
-#define MAX_RECV_SIZE 1000
+#define MAX_RECV_SIZE 100
 
 void *handle_chat(void *args) {
     User user = *(User*)args;
 
     while (1) {
         char buffer[1024] = {}, buffer1[1024] = {};
-        strcpy(buffer, user.username);
-        strcat(buffer, ": ");
 
         long len = recv(user.id, buffer + strlen(buffer), MAX_RECV_SIZE, 0);
         long len1 = 0;
@@ -122,8 +118,10 @@ void *handle_chat(void *args) {
                 // find which one left the room
                 if (users[i].id == user.id) {
                     users[i] = users[--user_num];
-                    strcpy(buffer, "User ["),
-                    strcat(buffer, user.username);
+                    strcpy(buffer, "User[");
+                    char id[10] = {};
+                    sprintf(id, "%d", user.id);
+                    strcat(buffer, id); 
                     strcat(buffer, "] has left the room.\n");
                     break;
                 }   
@@ -137,20 +135,29 @@ void *handle_chat(void *args) {
         if (len == MAX_RECV_SIZE && buffer[MAX_RECV_SIZE - 1] != '\n') {   
             len1 = recv(user.id, buffer1, MAX_RECV_SIZE, 0);
         }
-    
-        buffer[MAX_RECV_SIZE] = '\n';
-        buffer[MAX_RECV_SIZE + 1] = '\0'; 
 
         char *bufferbase = buffer;
         char *nextline;
         
         while((nextline = strchr(bufferbase, '\n')) != NULL) {
             long sendlen = nextline - bufferbase + 1;
-            send_to_all(user, bufferbase, sendlen);
+            char info[1024] = {};
+            strcpy(info, "User[");
+            char id[10] = {};
+            sprintf(id, "%d", user.id);
+            strcat(info, id);
+            strcat(info, "]: ");
+            int info_len = strlen(info);
+            strcat(info, bufferbase);
+
+            send_to_all(user, info, sendlen + info_len);
             bufferbase = nextline + 1;
 
-            if (bufferbase >= buffer + len)
+            if (bufferbase >= buffer + len - 1)
                 break;
+        }
+        if (bufferbase < buffer + len) {
+            send_to_all(user, bufferbase, buffer - bufferbase + len);
         }
         if (len == MAX_RECV_SIZE && buffer[MAX_RECV_SIZE - 1] != '\n') {
             len = len1;
@@ -178,15 +185,19 @@ void *handle_queue(void *args) {
     }
     while (1) {
         if (!msgQue_isempty(&msgque[t])) {
-            Message *msg = (Message *)malloc(sizeof(Message));
 
-            msgQue_getmsg(&msgque[t], msg);
+            
+            Message *msg = (Message *)malloc(sizeof(Message)); 
+
+            pthread_mutex_lock(&mutex);        
+            int i = 0;
+               
+            msgQue_getmsg(&msgque[t], msg);       
+            pthread_mutex_unlock(&mutex);
+
             char *buffer = msg->message;
             long length = msg->length;
-            if (send(users[t].id, buffer, length, 0) <= 0) {
-                // send fail
-                // break;
-            }
+            send(users[t].id, buffer, length, 0);
         }
     }
     return NULL;
@@ -234,13 +245,14 @@ int main(int argc, char **argv) {
         }
 
         char buffer[200] = {};
-        recv(user_id, &users[user_num].username, 200, 0);
         users[user_num].id = user_id;
 
         pthread_t thread1, thread2;
 
-        strcpy(buffer, "User ["),
-        strcat(buffer, users[user_num].username);
+        strcpy(buffer, "User[");
+        char id[10] = {};
+        sprintf(id, "%d", user_id);
+        strcat(buffer, id); 
         strcat(buffer, "] has joined the room.\n");
         send_to_all(users[user_num], buffer, -1);
 

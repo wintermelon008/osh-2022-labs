@@ -1,21 +1,65 @@
-<img src="pics\2.png" alt="image-20220528103111551" style="zoom:80%;" />
 
-基于多线程的多人聊天室，包括 2s (Server) 端和 2c (Client) 端。先使用命令
 
-```shell
-./2s 127.0.0.1 6666
+#### 双人聊天室
+
+##### 换行符分割测试
+
+![image-20220529165650727](D:\osh-2022-labs\lab3\pics\1-enter.png)
+
+##### 大消息分割测试
+
+​		如下图所示，`input.txt` 文件大小为 3Mb。使用重定向输入后可以发现所有内容都被正确发送，且没有出现错误分割。
+
+![image-20220529170051389](pics\1-big.png)
+
+
+
+#### 基于多线程的多人聊天室
+
+​		`2.c`针对用户消息，可以做到： 根据换行符进行分割，且不会造成消息中断。修改如下的参数可以自定义消息缓冲区的大小（达到这个大小后会被强制分割）
+
+```c
+#define MAX_RECV_SIZE 100
 ```
 
-启动服务端，再使用命令
+​		以下的测试中，上述数值均被设置为 100。
 
-```shell
-./2c 127.0.0.1 6666
+##### 换行符分割测试
+
+​		如下图，使用文件重定向后，所有的内容都被正确识别且依据换行符进行分割。
+
+![image-20220529164227440](pics\2-enter.png)
+
+##### 大消息分割测试
+
+​		如下图所示，`input.txt` 文件大小为 3Mb。使用重定向输入后可以发现所有内容都被正确发送，且没有出现错误分割。
+
+![image-20220529165033149](pics\2-big.png)
+
+​		
+
+##### 细粒度锁实现
+
+```c
+pthread_mutex_lock(&mutex);
+for (int i = 0; i < user_num; ++i) {
+    if (users[i].id == user.id)   // Not self
+        continue;
+    // add the message to mesage queue
+    msgQue_addmsg(&msgque[i], &msg);
+}
+pthread_mutex_unlock(&mutex);
+
+// ....
+
+pthread_mutex_lock(&mutex);        
+int i = 0;
+msgQue_getmsg(&msgque[t], msg);       
+pthread_mutex_unlock(&mutex);
 ```
 
-启动客户端。
 
-**客户端会要求用户先输入用户名，该名称将被显示在聊天窗口中。**
 
-![image-20220528134433691](pics\2-1.png)
+#### 基于 SELECT 的多人聊天室
 
-针对大消息，聊天室会进行自动分割。
+​		测试过程同上，结果均为正常。
