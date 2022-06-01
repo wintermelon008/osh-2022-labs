@@ -27,13 +27,22 @@ void send_to_all(User user, char* message, long length) {
     for (int i = 0; i < user_num; ++i) {
         if (users[i].id == user.id)   // Not self
             continue;
-        if (send(users[i].id, message, length, 0) <= 0) {
+
+        long ret = 0;
+            
+        sendstart:
+        ret = send(users[i].id, message, length, 0);
+        if (ret < 0)
             break;
+        if (ret < length) {
+            message = message + ret;
+            length = length - ret;
+            goto sendstart;
         }
     }
 }
 
-#define MAX_RECV_SIZE 100
+#define MAX_RECV_SIZE 1000
 
 
 int get_maxfd(fd_set clients, int maxfd) {

@@ -46,7 +46,18 @@ void *handle_chat(void *data) {
             char buf_head[1024] = "[0]: ";
             buf_head[1] = id;
             strncat(buf_head, bufferbase, 1000);
-            send(pipe->fd_recv, buf_head, sendlen + 6, 0);
+
+            long ret = 0, length = sendlen + 6;
+            char *buffer_head = buf_head;
+
+            sendstart:
+            ret = send(pipe->fd_recv, buffer_head, length, 0);
+            if (ret < length) {
+                buffer_head = buffer_head + ret;
+                length = length - ret;
+                goto sendstart;
+            }
+
             bufferbase = nextline + 1;
 
             if (bufferbase >= buffer + len)

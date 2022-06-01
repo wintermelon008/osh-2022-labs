@@ -101,7 +101,7 @@ void send_to_all(User user, char* message, long length) {
     pthread_mutex_unlock(&mutex);
 }
 
-#define MAX_RECV_SIZE 100
+#define MAX_RECV_SIZE 1000
 
 void *handle_chat(void *args) {
     User user = *(User*)args;
@@ -197,7 +197,15 @@ void *handle_queue(void *args) {
 
             char *buffer = msg->message;
             long length = msg->length;
-            send(users[t].id, buffer, length, 0);
+            long ret = 0;
+
+            sendstart:
+            ret = send(users[t].id, buffer, length, 0);
+            if (ret < length) {
+                buffer = buffer + ret;
+                length = length - ret;
+                goto sendstart;
+            }
         }
     }
     return NULL;
